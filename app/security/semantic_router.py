@@ -16,8 +16,8 @@ class GraphState(TypedDict):
 
 class SemanticEngine:
     def __init__(self):
-        # Google Gemma 
-        self.llm = ChatGroq(model="gemma2-9b-it", temperature=0)
+        # Open AI
+        self.llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0)
         self.retriever = policy_db.get_retriever()
         self.graph = self._build_graph()
 
