@@ -1,10 +1,26 @@
+# Web Framework
 fastapi==0.111.0
 uvicorn==0.30.1
 pydantic==2.7.4
+python-dotenv==1.0.1
+
+# Layer 1: Deterministic Security (Presidio)
 presidio-analyzer==2.2.354
 spacy==3.7.5
+
+# Layer 2: Semantic Routing & RAG
 langchain==0.2.6
-langchain-openai==0.1.14
 langchain-community==0.2.6
 langgraph==0.1.4
 chromadb==0.5.3
+
+# LLM Providers (==> Groq, HuggingFace)
+langchain-groq==0.1.9
+langchain-huggingface==0.0.3
+sentence-transformers==3.0.1
+
+# Strict Environment Pins (Resolving Dependency& NumPy conflicts)
+numpy==1.26.4
+scipy<1.14.0
+langchain-core<0.3.0,>=0.2.10
+langsmith<0.2.0
