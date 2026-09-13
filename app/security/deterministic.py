@@ -52,15 +52,26 @@ class DeterministicEngine:
         
         results = self.analyzer.analyze(text=text, language="en", entities=target_entities)
 
-        # Sort matches in reverse character order to preserve string slicing indices
-        sorted_results = sorted(results, key=lambda x: x.start, reverse=True)
+        # Sort primarily by start index (reverse) and secondarily by score (highest first)
+        sorted_results = sorted(results, key=lambda x: (x.start, x.score), reverse=True)
+        
         detected_items = []
         modified_text = text
         risk_score = 0.0
 
         high_risk_prefixes = ("KEY", "TOKEN", "PRIVATE_KEY", "CARD", "SSN", "AADHAAR", "PAN")
 
+        # Track the start index of the last processed redaction to prevent collision
+        last_processed_start = float('inf')
+
         for res in sorted_results:
+            # If current match overlaps with the previously processed string space, skip it
+            if res.end > last_processed_start:
+                continue
+            
+            # Lock in the new boundary
+            last_processed_start = res.start
+
             is_high_risk = any(tag in res.entity_type for tag in high_risk_prefixes)
             weight = 40.0 if is_high_risk else 15.0
             risk_score += weight
@@ -70,6 +81,8 @@ class DeterministicEngine:
                 "range": [res.start, res.end],
                 "score": round(res.score, 2)
             })
+            
+            # Safely slice and redact
             modified_text = modified_text[:res.start] + f"[{res.entity_type}_REDACTED]" + modified_text[res.end:]
 
         return modified_text, detected_items, min(risk_score, 100.0)
