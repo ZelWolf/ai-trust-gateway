@@ -1,6 +1,7 @@
 <div align="center">
+    
+![Project Banner](./assets/banner.png)
 
-# 🛡️ Sentinel AI Gateway
 ### Enterprise LLM Security Reverse Proxy & Observability Suite
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
