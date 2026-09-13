@@ -1,6 +1,6 @@
 <div align="center">
     
-![Project Banner](./assets/banner.png)
+![Project Banner](./assets/bannerh.png)
 
 ### Enterprise LLM Security Reverse Proxy & Observability Suite
 
