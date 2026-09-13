@@ -6,17 +6,33 @@ class DeterministicEngine:
     def __init__(self):
         self.analyzer = AnalyzerEngine()
         
-        # Regex patterns for detecting specific secrets
-        self.secret_patterns = {
+        # Custom regex patterns for credentials and specific PII
+        self.custom_patterns = {
+            # Secrets & Tokens
             "AWS_ACCESS_KEY": r"\bAKIA[0-9A-Z]{16}\b",
             "OPENAI_API_KEY": r"\bsk-[A-Za-z0-9_-]{20,}\b",
+            "JWT_TOKEN": r"\beyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*\b",
+            "RSA_PRIVATE_KEY": r"-----BEGIN (?:RSA )?PRIVATE KEY-----",
+            "US_SSN_PATTERN": r"\b\d{3}-\d{2}-\d{4}\b",
+            "DRIVERS_LICENSE": r"\bDL\d{8}\b",
+            "OBFUSCATED_ID": r"(?i)\b(?:(?:zero|one|two|three|four|five|six|seven|eight|nine|oh|\d)[,\s-]*){8,12}\b",
+            "STREET_ADDRESS": r"(?i)\b\d{1,6}\s+(?:[A-Za-z0-9#-]+\s+){1,5}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Way|Square|Sq|Place|Pl|Terrace|Parkway|Pkwy|Circle|Cir)\b",
+            
+            # Indian PII 
+            "PAN_NUMBER": r"\b[A-Z]{5}[0-9]{4}[A-Z]\b",
+            "AADHAAR_NUMBER": r"\b[2-9]\d{3}[\s-]?\d{4}[\s-]?\d{4}\b",
+            
         }
         self._init_custom_recognizers()
 
     def _init_custom_recognizers(self):
-        for name, pattern_str in self.secret_patterns.items():
-            pattern = Pattern(name=f"{name}_pattern", regex=pattern_str, score=0.95)
-            recognizer = PatternRecognizer(supported_entity=name, patterns=[pattern])
+        for name, pattern_str in self.custom_patterns.items():
+            pattern = Pattern(name=f"{name}_pattern", regex=pattern_str, score=0.85)
+            recognizer = PatternRecognizer(
+                supported_entity=name, 
+                patterns=[pattern],
+                context=["pan", "income tax", "aadhaar", "uidai", "identity", "card", "key", "token"]
+            )
             self.analyzer.registry.add_recognizer(recognizer)
 
     def _sync_scan_and_redact(self, text: str) -> Tuple[str, List[Dict[str, Any]], float]:
@@ -24,18 +40,36 @@ class DeterministicEngine:
         if not text.strip():
             return text, [], 0.0
 
-        target_entities = ["EMAIL_ADDRESS", "PHONE_NUMBER"] + list(self.secret_patterns.keys())
+        # Enable Presidio built-ins alongside custom recognizers
+        target_entities = [
+            "EMAIL_ADDRESS", 
+            "PHONE_NUMBER", 
+            "CREDIT_CARD", 
+            "US_SSN", 
+            "IP_ADDRESS",
+            "IBAN_CODE"
+        ] + list(self.custom_patterns.keys())
+        
         results = self.analyzer.analyze(text=text, language="en", entities=target_entities)
 
+        # Sort matches in reverse character order to preserve string slicing indices
         sorted_results = sorted(results, key=lambda x: x.start, reverse=True)
         detected_items = []
         modified_text = text
         risk_score = 0.0
 
+        high_risk_prefixes = ("KEY", "TOKEN", "PRIVATE_KEY", "CARD", "SSN", "AADHAAR", "PAN")
+
         for res in sorted_results:
-            weight = 40.0 if "KEY" in res.entity_type else 15.0
+            is_high_risk = any(tag in res.entity_type for tag in high_risk_prefixes)
+            weight = 40.0 if is_high_risk else 15.0
             risk_score += weight
-            detected_items.append({"entity": res.entity_type, "range": [res.start, res.end]})
+            
+            detected_items.append({
+                "entity": res.entity_type, 
+                "range": [res.start, res.end],
+                "score": round(res.score, 2)
+            })
             modified_text = modified_text[:res.start] + f"[{res.entity_type}_REDACTED]" + modified_text[res.end:]
 
         return modified_text, detected_items, min(risk_score, 100.0)
