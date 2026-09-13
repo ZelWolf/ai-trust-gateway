@@ -184,3 +184,8 @@ async def chat_proxy_endpoint(payload: ChatRequest):
 async def get_telemetry():
     """Returns the historical buffer of recent requests to populate the Streamlit SOC UI."""
     return list(TELEMETRY_LOGS)
+
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Ultra-low latency probe for liveness checks."""
+    return {"status": "healthy", "service": "sentinel-gateway"}
