@@ -9,10 +9,17 @@ class DeterministicEngine:
         # Custom regex patterns for credentials and specific PII
         self.custom_patterns = {
             # Secrets & Tokens
-            "AWS_ACCESS_KEY": r"\bAKIA[0-9A-Z]{16}\b",
+           "AWS_ACCESS_KEY": r"\bAKIA[0-9A-Z]{16}\b",
             "OPENAI_API_KEY": r"\bsk-[A-Za-z0-9_-]{20,}\b",
             "JWT_TOKEN": r"\beyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*\b",
             "RSA_PRIVATE_KEY": r"-----BEGIN (?:RSA )?PRIVATE KEY-----",
+            "GITHUB_TOKEN": r"\b(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}\b",
+            "SLACK_TOKEN": r"\bxox[bpso]-[0-9a-zA-Z]{10,48}\b",
+            "GOOGLE_API_KEY": r"\bAIza[0-9A-Za-z\-_]{35}\b",
+
+            # PII & Financial
+            "CREDIT_CARD": r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b",
+            "IBAN_NUMBER": r"\b[A-Z]{2}[0-9]{2}(?:[ ]?[0-9a-zA-Z]{4}){4,7}\b",
             "US_SSN_PATTERN": r"\b\d{3}-\d{2}-\d{4}\b",
             "DRIVERS_LICENSE": r"\bDL\d{8}\b",
             "OBFUSCATED_ID": r"(?i)\b(?:(?:zero|one|two|three|four|five|six|seven|eight|nine|oh|\d)[,\s-]*){8,12}\b",
@@ -21,7 +28,6 @@ class DeterministicEngine:
             # Indian PII 
             "PAN_NUMBER": r"\b[A-Z]{5}[0-9]{4}[A-Z]\b",
             "AADHAAR_NUMBER": r"\b[2-9]\d{3}[\s-]?\d{4}[\s-]?\d{4}\b",
-            
         }
         self._init_custom_recognizers()
 
