@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 # Page Configuration
 st.set_page_config(
-    page_title="Sentinel AI Gateway | SOC",
+    page_title="Sentinel AI Trust Gateway | SOC",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -36,7 +36,7 @@ API_BASE_URL = f"{GATEWAY_BASE_URL}/v1"
 
 # --- SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.title("🛡️ Sentinel AI Gateway")
+    st.title("🛡️ Sentinel AI Trust Gateway")
     st.caption("Enterprise Security Reverse Proxy")
     st.divider()
     
@@ -229,7 +229,7 @@ elif tab_selection == "⚔️ Benchmark Arena":
     groq_key = os.environ.get("GROQ_API_KEY")
 
     st.title("⚔️ Security Benchmark Arena")
-    st.markdown("Parallel evaluation comparing Sentinel Gateway against specialized safety models via Groq.")
+    st.markdown("Evaluation comparing Sentinel AI Trust Gateway against specialized safety models via Groq.")
     
     if not groq_key:
         st.error("🚨 `GROQ_API_KEY` not found in environment. Benchmark models cannot be executed.")
@@ -242,7 +242,7 @@ elif tab_selection == "⚔️ Benchmark Arena":
         elif groq_key:
             c1, c2, c3 = st.columns(3)
             
-            # 1. Sentinel Gateway
+            # 1. Sentinel AI Trust Gateway
             with c1:
                 st.markdown("### 🛡️ Sentinel Gateway")
                 st.caption("Custom Deterministic + RAG Semantic")
