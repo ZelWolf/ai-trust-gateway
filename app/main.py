@@ -19,7 +19,7 @@ app = FastAPI(
 security_engine = DeterministicEngine()
 semantic_engine = SemanticEngine()
 
-# Downstream Generation LLM (Fast, lightweight execution for allowed/redacted prompts)
+# Downstream Generation LLM 
 downstream_llm = ChatGroq(
     model="openai/gpt-oss-120b",
     temperature=0.7
@@ -66,16 +66,25 @@ async def run_pipeline(prompt: str) -> SecurityDecision:
     sanitized, findings, risk = await security_engine.scan_and_redact(prompt)
     l1_ms = (time.perf_counter() - l1_start) * 1000
 
-    # Layer 1 Hard Block (Zero-Trust PII / Secrets)
-    if risk >= 40.0:
+    # Critical Infrastructure & Secret Identifiers
+    CREDENTIAL_ENTITIES = {
+        "AWS_ACCESS_KEY",
+        "OPENAI_API_KEY",
+        "JWT_TOKEN",
+        "RSA_PRIVATE_KEY"
+    }
+    has_credentials = any(item.get("entity") in CREDENTIAL_ENTITIES for item in findings)
+
+    # Layer 1 Hard Block (Zero-Trust on Credentials / API Keys strictly)
+    if has_credentials:
         total_ms = (time.perf_counter() - start_total) * 1000
         decision = SecurityDecision(
             request_id=req_id,
             decision="BLOCK",
-            risk_level="CRITICAL" if risk >= 40.0 else "HIGH",
-            intent="DATA_EXTRACTION",
-            policy_id="POL-DATA-001",
-            reason=f"Blocked at Layer 1: Detected {len(findings)} sensitive entity/credential match(es).",
+            risk_level="CRITICAL",
+            intent="CREDENTIAL_EXPOSURE",
+            policy_id="POL-SEC-001",
+            reason="Blocked at Layer 1: Infrastructure secret or credential leak detected in payload.",
             sanitized_prompt=sanitized,
             timing=TimingBreakdown(
                 layer_1_ms=round(l1_ms, 2),
@@ -88,6 +97,7 @@ async def run_pipeline(prompt: str) -> SecurityDecision:
         return decision
 
     # --- LAYER 2: Semantic Router & Policy RAG ---
+    # Standard PII proceeds with the sanitized prompt for contextual analysis
     l2_start = time.perf_counter()
     l2_result = await semantic_engine.evaluate(sanitized)
     l2_ms = (time.perf_counter() - l2_start) * 1000
@@ -117,7 +127,13 @@ async def run_pipeline(prompt: str) -> SecurityDecision:
         risk_level = "HIGH" if intent == "PROMPT_INJECTION" else "CRITICAL"
     elif findings:
         final_decision = "REDACT"
-        risk_level = "MEDIUM"
+        has_high_value_pii = any(
+            item.get("entity") in {"CREDIT_CARD", "US_SSN", "AADHAAR_NUMBER", "PAN_NUMBER"} 
+            for item in findings
+        )
+        risk_level = "HIGH" if has_high_value_pii else "MEDIUM"
+        if not policy_id:
+            reasoning = f"Sanitized {len(findings)} sensitive PII entity/match(es). Payload cleared for downstream execution."
     else:
         final_decision = "ALLOW"
         risk_level = "LOW"
