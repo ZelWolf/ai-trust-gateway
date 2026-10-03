@@ -48,6 +48,7 @@ and evaluates each request through two security layers:
    - PII detection with Microsoft Presidio
    - Regex-based secret and credential detection
    - Redaction or early blocking for high-confidence matches
+![DeterministicLayer](./app/ui/assets/sentinelai.gif)
 
 2. **Semantic security analysis**
    - Intent classification
