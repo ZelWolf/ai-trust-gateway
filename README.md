@@ -151,7 +151,7 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 | **Sentinel Gateway** | Deterministic + Vector RAG | `17ms (L1)` / `2.6s (L2)` | CPU / 4GB RAM | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
 | **PromptGuard2** | ML Classification | `~250 ms` | Single GPU | No *(Categorical output)* | No *(Detection only)* |
 | **OSS Safeguard 120B** | Massive Reasoning LLM | `~8.5+ s` | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
-![benchmark](./app/ui/assets/benchmark.gif)
+![benchmark](./app/ui/assets/comparisons.gif)
 
 ### Architectural Takeaways
 
