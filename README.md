@@ -68,6 +68,19 @@ and evaluates each request through two security layers:
     *   **Layer 2 / Policy Engine** identifies the malicious intent to create network exploit scripts, triggering a **HARD BLOCK** under compliance policy POL-MAL-003.
         
 *   **Result:** The request is dropped instantly at the proxy layer. **The request is terminated at the gateway, preventing a downstream LLM invocation.**, and zero compute tokens are wasted on malicious traffic, providing centralized enforcement and auditable security controls for downstream LLM traffic. with full SOC audit trails.
+  ## 🧠 Why a Dual-Layer Architecture?
+
+Sentinel separates deterministic security controls from semantic reasoning:
+
+| Layer | Purpose | Typical Latency | Strength |
+|---|---|---:|---|
+| Layer 1 | PII, credentials, deterministic rules | ~18 ms | Fast, predictable |
+| Layer 2 | Prompt injection, intent, policy reasoning | ~2.67 s | Context-aware |
+
+Layer 1 handles high-confidence threats without invoking an LLM.
+Only requests requiring semantic analysis reach Layer 2.
+
+This reduces unnecessary inference, downstream API calls, and security analysis cost while preserving a deeper inspection path for ambiguous requests.
 # 🏗️ System Architecture
 
 Sentinel operates as an asynchronous LLM security gateway, enforcing zero-trust inspection boundaries between client applications and downstream model providers.
