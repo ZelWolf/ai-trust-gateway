@@ -3,7 +3,6 @@ import time
 import uuid
 from collections import deque
 from typing import List, Dict, Any, Optional
-from chromadb import db
 from fastapi import FastAPI, HTTPException, status, Security, Request, Depends
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
