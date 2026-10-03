@@ -55,6 +55,7 @@ and evaluates each request through two security layers:
    - Policy retrieval from a ChromaDB knowledge base
    - LangGraph-based workflow orchestration
    - LLM-based policy evaluation
+![SemanticLayer](./app/ui/assets/sentinelaipromptattack.gif)
 
 #### Concrete Execution Example
 
