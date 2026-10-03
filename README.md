@@ -101,6 +101,7 @@ While Layer 1 handles exact pattern matching and PII redaction, Layer 2 is engin
 ### Policy RAG workflow
 ![rag](./app/ui/assets/rag.png)
 
+
 # 🚀 Key Features
 
 - **Dual-Tiered Defense Pipeline:** Combines lightning-fast deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
@@ -182,6 +183,23 @@ False negatives (allowing malicious traffic through) occur when adversaries succ
 1. **L1 Evasion via Obfuscation:** The deterministic layer relies on exact pattern matching. Attackers bypass this by using encoding techniques (Base64, rot13), or *typoglycemia* (scrambling the middle letters of words). Because the raw regex fails to match the scrambled text, the payload slips through L1.
 2. **L2 Vector Dilution:** RAG embeddings average the semantic meaning of the entire prompt. If an attacker buries a 50-token prompt injection deep inside a 2,000-token fictional story, the overall vector embedding gets mathematically diluted. The cosine distance to the security policy falls below the `POLICY_SCORE_THRESHOLD=0.16`, meaning the policy is never retrieved, and the Judge defaults to `PASS`.
 3. **Judge Susceptibility:** The LLM-as-a-Judge is ultimately still a language model. Complex role-playing attacks (e.g., *"Pretend you are a grandmother..."*) can occasionally trick the Groq evaluation model into ignoring its systemic evaluation prompt.
+### 🎯 Retrieval Threshold Calibration
+
+Sentinel's policy retrieval threshold is an empirically calibrated configuration rather than an arbitrary constant.
+
+The policy store uses normalized `bge-small-en-v1.5` embeddings evaluated via ChromaDB using **Cosine Distance** ($D_C$):
+
+$$D_C(\mathbf{u}, \mathbf{v}) = 1 - \cos(\theta)$$
+
+A distance threshold of `0.16` corresponds to a minimum **Cosine Similarity of 0.84**.
+
+This threshold was selected as the operating point for the 150-case benchmark because it provided a practical equilibrium between threat recall and false policy matches. In security engineering, technical prompts often sit dangerously close in vector space (e.g., a benign developer question about `asyncio` sockets versus an adversarial request for a Python reverse shell). 
+
+Setting the threshold too high pulls exploit policies into the context of benign engineering questions, triggering unnecessary LLM-as-a-Judge evaluations and driving up the False Positive Rate (FPR). Setting it too low allows obfuscated adversarial requests to evade vector matching entirely. 
+
+At the `0.16` calibration point, Sentinel successfully captures adversarial intent with a **97.37% Threat Block Rate** while restricting false alarms on dual-use technical code to **5.56%**.
+
+> **Note:** This threshold is tightly coupled to Sentinel's current policy corpus, embedding model, and benchmark distribution. It is designed to be recalibrated as enterprise rulesets scale.
 
 ### 🛠️ Future Mitigation Roadmap
 *   **Dynamic Thresholding:** Implementing adaptive `POLICY_SCORE_THRESHOLD` limits based on the user's historical trust score.
