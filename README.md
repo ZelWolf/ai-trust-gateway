@@ -72,43 +72,7 @@ and evaluates each request through two security layers:
 
 Sentinel operates as an asynchronous reverse proxy, enforcing strict zero-trust boundaries between clients and foundation models without introducing unacceptable latency penalties.
 
-```text
-Client Request
-      │
-      ▼
-┌───────────────┐
-│ FastAPI Proxy │
-└───────┬───────┘
-        │
-        ▼
-┌──────────────────────────────────────────────┐
-│ LAYER 1: Deterministic Engine (Sub-25ms)     │
-│ ├── Microsoft Presidio (PII / Identifiers)   │
-│ └── Custom Regex (AWS Keys, JWT, PAN, etc.)  │
-└───────┬──────────────────────────────────────┘
-        │
-        ├─► [CRITICAL RISK / MATCH] ──► HARD BLOCK (Zero Token Waste)
-        │
-        ▼
-┌──────────────────────────────────────────────┐
-│ LAYER 2: Semantic Guardrail & Policy RAG     │
-│ ├── LangGraph Intent Classifier              │
-│ └── ChromaDB + FastEmbed Compliance Store    │
-└───────┬──────────────────────────────────────┘
-        │
-        ├─► [POLICY VIOLATION] ────────► HARD BLOCK / AUDIT LOG
-        │
-        ▼
-┌───────────────┐
-│ Sanitized I/O │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Downstream LLM│
-└───────────────┘
-
-```
+![Architecture](./app/ui/assets/architecture.png)
 # 🚀 Key Features
 
 - **Dual-Tiered Defense Pipeline:** Combines lightning-fast deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
