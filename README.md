@@ -125,17 +125,11 @@ code, PII/credentials, and adversarial/obfuscated inputs.
 ![Test Snapshot](./app/ui/assets/testsnap.png)
 
 
-| Metric | Result |
-|---|---:|
-| Test Cases | 150 |
-| Classification Accuracy | 89.33% |
-| End-to-End Threat Block Rate | 97.37% |
-| False Positive Rate | 5.6% |
-| False Negative Rate | 2.6% |
-| Layer 1 Avg Latency | 17.9 ms |
-| Layer 1 P95 | 38.8 ms |
-| Layer 2 Avg Latency | 2.67 s |
-| Layer 2 P95 | 4.51 s |
+### 📊 Benchmarks
+
+| Tests | Accuracy | Block Rate | FP Rate | FN Rate | L1 Avg | L1 P95 | L2 Avg | L2 P95 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **150** | **89.33%** | **97.37%** | **5.6%** | **2.6%** | **17.9 ms** | **38.8 ms** | **2.67 s** | **4.51 s** |
 ## 🛠️ Tech Stack
 
 - **Core Gateway:** FastAPI, Pydantic v2, Uvicorn (Async IO)
