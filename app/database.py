@@ -3,7 +3,9 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime, timezone
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sentinel_audit.db"
+DB_DIR = "./data"
+os.makedirs(DB_DIR, exist_ok=True)
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_DIR}/sentinel_audit.db"
 
 # check_same_thread=False is required for FastAPI to use SQLite safely across async requests
 engine = create_engine(
