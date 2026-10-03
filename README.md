@@ -303,7 +303,7 @@ pip install -r requirements.txt
 ### 4. Configure Environment Variables
 Create a `.env` file in the root directory and add your API credentials:
 ```plaintext
-groq_api_key=your_groq_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 ANONYMIZED_TELEMETRY=False
 POLICY_SCORE_THRESHOLD=0.16
 ```
