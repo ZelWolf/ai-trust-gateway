@@ -2,7 +2,7 @@
     
 ![Project Banner](./banner.png)
 
-### Enterprise LLM Security Reverse Proxy & Observability Suite
+### Policy-Aware Security Gateway for LLM Applications
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -41,12 +41,19 @@ Modern applications increasingly route raw user prompts directly to external lar
 
 ### How Sentinel Solves This
 
-**Sentinel** acts as an enterprise-grade security reverse proxy sitting directly between client applications and downstream LLMs. Instead of relying purely on slow, expensive LLM-based safety checks for every single request, Sentinel enforces a high-performance, tiered defense pipeline:
+**Sentinel** sits between an application and its downstream LLM provider
+and evaluates each request through two security layers:
 
-1.  **Layer 1 (Deterministic CPU Engine):** Instantly scans incoming traffic using Microsoft Presidio and high-throughput regular expressions. It catches structural secrets and sensitive identifiers in under 25 milliseconds, completely masking them or triggering an immediate block.
-    
-2.  **Layer 2 (Semantic & RAG Policy Engine):** For prompts requiring deeper contextual analysis, Sentinel uses a LangGraph-orchestrated semantic router coupled with a ChromaDB vector store. It retrieves company compliance guidelines (e.g., policy IDs like POL-INJ-002) and evaluates intent using specialized safety classifiers.
-    
+1. **Deterministic inspection**
+   - PII detection with Microsoft Presidio
+   - Regex-based secret and credential detection
+   - Redaction or early blocking for high-confidence matches
+
+2. **Semantic security analysis**
+   - Intent classification
+   - Policy retrieval from a ChromaDB knowledge base
+   - LangGraph-based workflow orchestration
+   - LLM-based policy evaluation
 
 #### Concrete Execution Example
 
@@ -108,14 +115,24 @@ Client Request
 - **Interactive SOC Observability Dashboard:** Built with Streamlit to monitor live traffic, track decision latencies, inspect pipeline blocks, and export structured JSON audit records.
 - **Security Benchmark Arena:** A built-in parallel evaluation suite comparing Sentinel's custom pipeline against specialized industry safety models (such as Meta Llama Prompt Guard and OpenAI Safety Guard) in real-time.
 
-## 📊 Benchmark Arena: Speed vs. Context Trade-off
+## ## 📊 Evaluation Snapshot
 
-| Security Engine | Architecture | Latency (Avg) | Contextual Reason Generation | PII Redaction Support |
-|-------------------|--------------|--------------|------------------------------|---------------------|
-| Sentinel Gateway  | Deterministic + Policy RAG | ~600–1200 ms | Yes (Cites specific company policy IDs) | Yes (Regex + Presidio) |
-| Meta Prompt Guard 86M Classification Model | ~300 ms | No (Returns raw probability float) | No |
-| Safety GPT OSS 20B Reasoning Classifier | ~1500 ms | Yes (Binary Safe/Unsafe check) | No |
 
+Evaluated on a frozen 150-case security test suite covering benign
+requests, prompt injection, jailbreaks, data extraction, malicious
+code, PII/credentials, and adversarial/obfuscated inputs.
+
+| Metric | Result |
+|---|---:|
+| Test Cases | 150 |
+| Classification Accuracy | 89.33% |
+| End-to-End Threat Block Rate | 97.37% |
+| False Positive Rate | 5.6% |
+| False Negative Rate | 2.6% |
+| Layer 1 Avg Latency | 17.9 ms |
+| Layer 1 P95 | 38.8 ms |
+| Layer 2 Avg Latency | 2.67 s |
+| Layer 2 P95 | 4.51 s |
 ## 🛠️ Tech Stack
 
 - **Core Gateway:** FastAPI, Pydantic v2, Uvicorn (Async IO)
@@ -123,7 +140,7 @@ Client Request
 - **Deterministic Guardrails:** Microsoft Presidio Analyzer/Anonymizer, Custom RegEx Engine
 - **Semantic Guardrails:** LangGraph, ChromaDB, FastEmbedInference & Benchmarking: Groq API SDK, LangChain Core
 
-## ⚙️ Installation & Quickstart
+## ⚙️ Installation & Quickstart (Docker recommended)
 
 ### 1. Clone the Repository
 ```bash
@@ -150,14 +167,32 @@ ANONYMIZED_TELEMETRY=False
 POLICY_SCORE_THRESHOLD=0.16
 ```
 
-### 5. Run the Application
-#### Terminal 1: Start the FastAPI Gateway Backend 
+### 5. Deploy the Stack
+#### Spin up the API gateway, the SOC dashboard, and the persistent audit database with a single command:
 ```bash
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+docker compose up --build -d
 ``` 
-#### Terminal 2: Launch the Streamlit SOC Dashboard 
-```bash 
-streamlit run app/ui/dashboard.py 
+#### Access the Services 
+**SOC Dashboard: http://localhost:8501
+**API Health Probe: http://localhost:8000/health
+
+
+## Alternative: Local Development (Bare Metal)
+#### To run the application outside of Docker:
+
+```bash
+# Set up Virtual Environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install Dependencies
+pip install -r requirements.txt
+
+# Terminal 1: Start the FastAPI Gateway Backend
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 2: Launch the Streamlit SOC Dashboard
+streamlit run app/ui/dashboard.py
 ```
 ## 📂 Project Structure
 
@@ -165,13 +200,17 @@ streamlit run app/ui/dashboard.py
 ai-trust-gateway/
 ├── app/
 │   ├── main.py                     # FastAPI application entrypoint & proxy routes
+│   ├── database.py                 # SQLite SQLAlchemy configuration
 │   ├── security/
 │   │   ├── deterministic.py        # Layer 1: Presidio & Custom Regex engine
 │   │   └── semantic_router.py      # Layer 2: LangGraph & ChromaDB RAG
 │   └── ui/
-       └── dashboard.py            # Streamlit SOC observability dashboard
-├── tests/                          # Automated evaluation test suites
-├── requirements.txt                # Project dependencies
+│       ├── dashboard.py            # Streamlit SOC observability dashboard
+│       └── assets/                 # UI styling and images
+├── docker-compose.yml              # Multi-container orchestration
+├── Dockerfile.api                  # Backend container specification
+├── Dockerfile.ui                   # Frontend container specification
+├── requirements.txt                # Curated project dependencies
 └── README.md
 ```
 
