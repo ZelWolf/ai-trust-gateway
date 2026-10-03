@@ -1,30 +1,38 @@
-# Web Framework
-fastapi==0.111.0
+# --- Gateway API & Routing ---
+fastapi==0.141.1
 uvicorn==0.30.1
-pydantic==2.7.4
-python-dotenv==1.0.1
 slowapi==0.1.10
+httpx==0.28.1
+requests==2.34.2
 
-# Layer 1: Deterministic Security (Presidio)
+# --- Data Persistence & Config ---
+SQLAlchemy==2.0.52
+pydantic==2.13.5
+python-dotenv==1.0.1
+
+# --- Security Layer 1 (Deterministic) ---
 presidio-analyzer==2.2.354
 spacy==3.7.5
+phonenumbers==8.13.55
+en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl
 
-# Layer 2: Semantic Routing & RAG
+# --- Security Layer 2 (Semantic) ---
 langchain==0.2.6
 langchain-community==0.2.6
+langchain-core>=0.2.10,<0.3.0
+langchain-groq==0.1.9
+langchain-chroma==0.1.2
 langgraph==0.1.4
 chromadb==0.5.3
-langchain-chroma==0.1.2
-sqlachemy==2.0.52
+fastembed==0.8.0
 
-# LLM Providers (==> Groq, HuggingFace)
-langchain-groq==0.1.9
-langchain_community.embeddings.fastembeds==0.1.2
-sentence-transformers==3.0.1
+# --- Security Gateway Dashboard (UI) ---
+streamlit==1.63.0
+pandas==3.0.5
+altair==6.2.2
 
-# Strict Environment Pins (Resolving Dependency& NumPy conflicts)
+# --- Strict Environment Pins ---
 numpy==1.26.4
 scipy<1.14.0
-langchain-core<0.3.0,>=0.2.10
 langsmith<0.2.0
 python-frontmatter==1.3.0
