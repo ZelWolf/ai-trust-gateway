@@ -22,9 +22,13 @@ app = FastAPI(
     description="Enterprise AI Trust Gateway & Security Reverse Proxy",
     version="1.0.0"
 )
-# Load API keys from environment variable or default to a set of test keys
-RAW_KEYS = os.getenv("SENTINEL_API_KEYS", "sk-sentinel-dev-12345,sk-sentinel-test-98765")
+# Load API keys from environment variable. Default to empty (fail-closed) if not set.
+RAW_KEYS = os.getenv("SENTINEL_API_KEYS", "")
 VALID_API_KEYS = {k.strip() for k in RAW_KEYS.split(",") if k.strip()}
+
+if not VALID_API_KEYS:
+    import logging
+    logging.warning("CRITICAL: SENTINEL_API_KEYS is empty. All API requests will be rejected.")
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
