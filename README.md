@@ -172,6 +172,21 @@ Total Test Cases Loaded: 150
 | **Layer 1 Latency (Avg / P95)** | **17.9 ms** / **38.8 ms** | Sub-50ms CPU-bound deterministic matching |
 | **Layer 2 Latency (Avg / P95)** | **2.67 s** / **4.51 s** | Vector retrieval + Groq LLM policy reasoning |
 
+#### Causes of False Positives (~5.56% FPR)
+False positives (blocking legitimate developer prompts) typically originate from system over-sensitivity:
+1. **L1 Deterministic Over-reach:** Microsoft Presidio's NER (Named Entity Recognition) and custom regex engines are rigid. A benign 10-digit database ID might be incorrectly flagged as a phone number (PII), or a dummy string in a developer's code snippet might trigger the AWS credential regex, resulting in an instant L1 hard-block.
+2. **L2 Semantic Proximity (The "Dual-Use" Problem):** If a cybersecurity student asks, *"Explain how to patch a reverse shell vulnerability in Python,"* the ChromaDB vector engine detects strong semantic overlap with `POL-MAL-003` (Prohibit network exploits). The LLM Judge may misinterpret the educational context as an active exploit attempt and block the payload.
+
+#### Causes of False Negatives(~2.63% FNR)
+False negatives (allowing malicious traffic through) occur when adversaries successfully evade both architectural layers:
+1. **L1 Evasion via Obfuscation:** The deterministic layer relies on exact pattern matching. Attackers bypass this by using encoding techniques (Base64, rot13), or *typoglycemia* (scrambling the middle letters of words). Because the raw regex fails to match the scrambled text, the payload slips through L1.
+2. **L2 Vector Dilution:** RAG embeddings average the semantic meaning of the entire prompt. If an attacker buries a 50-token prompt injection deep inside a 2,000-token fictional story, the overall vector embedding gets mathematically diluted. The cosine distance to the security policy falls below the `POLICY_SCORE_THRESHOLD=0.16`, meaning the policy is never retrieved, and the Judge defaults to `PASS`.
+3. **Judge Susceptibility:** The LLM-as-a-Judge is ultimately still a language model. Complex role-playing attacks (e.g., *"Pretend you are a grandmother..."*) can occasionally trick the Groq evaluation model into ignoring its systemic evaluation prompt.
+
+### 🛠️ Future Mitigation Roadmap
+*   **Dynamic Thresholding:** Implementing adaptive `POLICY_SCORE_THRESHOLD` limits based on the user's historical trust score.
+*   **L1 De-obfuscation:** Adding a fast pre-processing step to decode Base64 and hex strings before passing them to the Presidio engine.
+
 ## 🛠️ Tech Stack
 
 - **Core Gateway & API:** FastAPI, Pydantic v2, Uvicorn (Async IO), SlowAPI (DDoS/Rate Limiting)
