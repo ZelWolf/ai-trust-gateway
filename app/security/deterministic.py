@@ -10,7 +10,7 @@ class DeterministicEngine:
             "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
         }
         
-        # NLP enginer
+        # NLP engine
         provider = NlpEngineProvider(nlp_configuration=configuration)
         custom_nlp_engine = provider.create_engine()
         self.analyzer = AnalyzerEngine(
