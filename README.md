@@ -4,18 +4,20 @@
 
 ### Enterprise LLM Security Reverse Proxy & Observability Suite
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Uvicorn](https://img.shields.io/badge/Uvicorn-0.30-499848)](https://www.uvicorn.org/)
-[![Pydantic v2](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Uvicorn](https://img.shields.io/badge/Uvicorn-0.30.1-499848)](https://www.uvicorn.org/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-2.13.5-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
 [![Presidio](https://img.shields.io/badge/Microsoft-Presidio-0078D4?logo=microsoft&logoColor=white)](https://microsoft.github.io/presidio/)
-[![LangChain](https://img.shields.io/badge/LangChain-0.2-1C3C3C)](https://www.langchain.com/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-0.1-FF5722)](https://langchain-ai.github.io/langgraph/)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5-orange)](https://www.trychroma.com/)
+[![spaCy](https://img.shields.io/badge/spaCy-3.7.5-09A3D5?logo=spacy&logoColor=white)](https://spacy.io/)
+[![LangChain](https://img.shields.io/badge/LangChain-0.2.6-1C3C3C)](https://www.langchain.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.1.4-FF5722)](https://langchain-ai.github.io/langgraph/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5.3-orange)](https://www.trychroma.com/)
 [![Groq](https://img.shields.io/badge/Groq-Inference-F55036)](https://groq.com/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.32%2B-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.63.0-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Production Ready](https://img.shields.io/badge/Status-Active%20Development-success)]()
+[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success)]()
 
 *A high-performance, dual-layer security middleware designed to intercept, inspect, redact, and evaluate LLM payloads in real-time before they reach downstream generative models.*
 
