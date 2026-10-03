@@ -96,10 +96,12 @@ code, PII/credentials, and adversarial/obfuscated inputs.
 | **150** | **89.33%** | **97.37%** | **5.6%** | **2.6%** | **17.9 ms** | **38.8 ms** | **2.67 s** | **4.51 s** |
 ## 🛠️ Tech Stack
 
-- **Core Gateway:** FastAPI, Pydantic v2, Uvicorn (Async IO)
-- **Observability UI:** Streamlit, Pandas, Custom CSS
-- **Deterministic Guardrails:** Microsoft Presidio Analyzer/Anonymizer, Custom RegEx Engine
-- **Semantic Guardrails:** LangGraph, ChromaDB, FastEmbedInference & Benchmarking: Groq API SDK, LangChain Core
+- **Core Gateway & API:** FastAPI, Pydantic v2, Uvicorn (Async IO), SlowAPI (DDoS/Rate Limiting)
+- **Data & Persistence:** SQLAlchemy (SQLite via Persistent Volume), Python-Dotenv
+- **Observability UI:** Streamlit, Pandas, Altair (Data Visualization), Custom CSS
+- **Deterministic Guardrails (Layer 1):** Microsoft Presidio Analyzer, spaCy (`en_core_web_sm`), Custom RegEx Engine, Phonenumbers
+- **Semantic Guardrails (Layer 2):** LangChain Core, LangGraph, ChromaDB, FastEmbed
+- **Inference & Benchmarking:** Groq API SDK (`langchain-groq`), HTTPX
 
 ## ⚙️ Installation & Quickstart (Docker recommended)
 
