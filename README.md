@@ -17,7 +17,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.63.0-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Production Grade Prototype](https://img.shields.io/badge/Status-Production%20Ready-success)]()
+[![Status: Production Inspired Prototype](https://img.shields.io/badge/Status-Production%20Grade-success)]()
 
 *A high-performance, dual-layer security middleware designed to intercept, inspect, redact, and evaluate LLM payloads in real-time before they reach downstream generative models.*
 
