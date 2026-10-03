@@ -34,7 +34,15 @@ st.markdown("""
 
 GATEWAY_BASE_URL = "http://localhost:8000"
 API_BASE_URL = f"{GATEWAY_BASE_URL}/v1"
+GATEWAY_BASE_URL = "http://localhost:8000"
+API_BASE_URL = f"{GATEWAY_BASE_URL}/v1"
 
+#  Define Auth Headers for Protected Endpoints 
+GATEWAY_API_KEY = os.environ.get("SENTINEL_GATEWAY_KEY", "sk-sentinel-test-98765")
+AUTH_HEADERS = {
+    "Content-Type": "application/json",
+    "X-API-Key": GATEWAY_API_KEY
+}
 # --- SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.image("assets/banner.png", use_container_width=True)
@@ -97,7 +105,7 @@ if tab_selection == "🔍 Live Playground":
             with st.spinner("Processing through gateway pipeline..."):
                 endpoint = f"{API_BASE_URL}/inspect" if "inspect" in mode else f"{API_BASE_URL}/chat"
                 try:
-                    res = requests.post(endpoint, json={"prompt": user_prompt}, timeout=35.0)
+                    res = requests.post(endpoint, json={"prompt": user_prompt}, headers=AUTH_HEADERS, timeout=35.0)
                     
                     if res.status_code == 200:
                         data = res.json()
@@ -184,7 +192,7 @@ elif tab_selection == "📊 Telemetry & Logs":
         if st.button("🔄 Refresh Logs", use_container_width=True):
             st.rerun()
     try:
-        res = requests.get(f"{API_BASE_URL}/telemetry", timeout=5.0)
+        res = requests.get(f"{API_BASE_URL}/telemetry", headers=AUTH_HEADERS, timeout=5.0)
         if res.status_code == 200:
             logs = res.json()
             if logs:
@@ -327,7 +335,7 @@ elif tab_selection == "⚔️ Benchmark Arena":
                 st.caption("Custom Deterministic + RAG Semantic")
                 try:
                     t0 = time.perf_counter()
-                    res = requests.post(f"{API_BASE_URL}/inspect", json={"prompt": test_vector}, timeout=25.0)
+                    res = requests.post(f"{API_BASE_URL}/inspect", json={"prompt": test_vector}, headers=AUTH_HEADERS, timeout=25.0)
                     sen_time = (time.perf_counter() - t0) * 1000
                     
                     if res.status_code == 200:
