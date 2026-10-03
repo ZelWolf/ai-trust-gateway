@@ -165,12 +165,13 @@ Total Test Cases Loaded: 150
 
 | Metric / Layer | Value | Description |
 | :--- | :--- | :--- |
-| **Test Suite Size** | `150 cases` | Adversarial, PII, and benign evaluation vectors |
-| **Overall Accuracy** | **89.33%** | Combined Layer 1 + Layer 2 classification accuracy |
-| **Block Rate** | **97.37%** | True positive neutralization on malicious/unauthorized traffic |
-| **False Positive Rate** | **5.6%** | Legitimate developer prompts mistakenly flagged |
-| **False Negative Rate** | **2.6%** | Harmful vectors evading both guardrails |
-| **Layer 1 Latency (Avg / P95)** | **17.9 ms** / **38.8 ms** | Sub-50ms CPU-bound deterministic matching |
+| **Test Suite Size** | `150 cases` | 114 adversarial attack vectors + 36 benign controls |
+| **Decision Accuracy** | **96.67%** | Correct allow/block boundary enforcement (145/150) |
+| **Intent Classification** | **89.33%** | Fine-grained semantic category matching (134/150) |
+| **Threat Block Rate** | **97.37%** | True positive attack neutralization (111/114 threats stopped) |
+| **False Positive Rate** | **5.56%** | Legitimate developer prompts mistakenly flagged (2/36) |
+| **False Negative Rate** | **2.63%** | Harmful vectors evading both guardrails (3/114) |
+| **Layer 1 Latency (Avg / P95)** | **17.9 ms** / **38.8 ms** | Sub-50ms CPU-bound deterministic matching (Presidio) |
 | **Layer 2 Latency (Avg / P95)** | **2.67 s** / **4.51 s** | Vector retrieval + Groq LLM policy reasoning |
 
 #### Causes of False Positives (~5.56% FPR)
@@ -220,9 +221,9 @@ To validate Sentinel's architectural approach, we benchmarked the dual-engine ga
 
 The results highlight the critical trade-offs between raw inference speed, hardware requirements, and enterprise compliance capabilities.
 
-| Security Engine | Architecture Type | Hardware Target | Policy Awareness | PII Redaction |
+| Security Engine | Architecture Type | Deployment Footprint | Policy Awareness | PII Redaction |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sentinel Gateway** | Deterministic + Vector RAG | CPU / 4GB RAM | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
+| **Sentinel Gateway** | Deterministic + Vector RAG | **Local CPU (<4GB) + Groq API** | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
 | **PromptGuard2** | ML Classification | Single GPU | No *(Categorical output)* | No *(Detection only)* |
 | **OSS Safeguard 120B** | Massive Reasoning LLM | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
 
@@ -237,7 +238,7 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 ### Architectural Takeaways
 
 *   **PromptGuard2:** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
-*   **(OSS 120B Safeguard:** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
+*   **OSS 120B Safeguard:** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
 *   **Sentinel AI Gateway:** By splitting the workload, Sentinel achieves the best of both worlds. The **Layer 1 deterministic engine** neutralizes obvious threats and PII on a standard CPU, entirely bypassing the need for heavy compute. Only ambiguous, context-heavy prompts reach the **Layer 2 RAG engine**, which utilizes a lightweight local vector store to apply enterprise-specific rules without requiring a 120B parameter payload.
   ## 🔌 API Reference
 
