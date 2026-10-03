@@ -119,11 +119,18 @@ code, PII/credentials, and adversarial/obfuscated inputs.
 ![Test Snapshot](./app/ui/assets/testsnap.png)
 
 
-### 📊 Benchmarks
+Evaluated on a frozen **150-case adversarial test suite** covering prompt injections, multi-turn jailbreaks, credential exfiltration, malicious code, and obfuscated PII payloads.
 
-| Tests | Accuracy | Block Rate | FP Rate | FN Rate | L1 Avg | L1 P95 | L2 Avg | L2 P95 |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **150** | **89.33%** | **97.37%** | **5.6%** | **2.6%** | **17.9 ms** | **38.8 ms** | **2.67 s** | **4.51 s** |
+| Metric / Layer | Value | Description |
+| :--- | :--- | :--- |
+| **Test Suite Size** | `150 cases` | Adversarial, PII, and benign evaluation vectors |
+| **Overall Accuracy** | **89.33%** | Combined Layer 1 + Layer 2 classification accuracy |
+| **Block Rate** | **97.37%** | True positive neutralization on malicious/unauthorized traffic |
+| **False Positive Rate** | **5.6%** | Legitimate developer prompts mistakenly flagged |
+| **False Negative Rate** | **2.6%** | Harmful vectors evading both guardrails |
+| **Layer 1 Latency (Avg / P95)** | **17.9 ms** / **38.8 ms** | Sub-50ms CPU-bound deterministic matching |
+| **Layer 2 Latency (Avg / P95)** | **2.67 s** / **4.51 s** | Vector retrieval + Groq LLM policy reasoning |
+
 ## 🛠️ Tech Stack
 
 - **Core Gateway & API:** FastAPI, Pydantic v2, Uvicorn (Async IO), SlowAPI (DDoS/Rate Limiting)
@@ -133,7 +140,26 @@ code, PII/credentials, and adversarial/obfuscated inputs.
 - **Semantic Guardrails (Layer 2):** LangChain Core, LangGraph, ChromaDB, FastEmbed
 - **Inference & Benchmarking:** Groq API SDK (`langchain-groq`), HTTPX
 
-## ⚙️ Installation & Quickstart (Docker recommended)
+##Additional: ⚔️ Benchmark Arena: Sentinel vs. Industry Safeguards
+
+To validate Sentinel's architectural approach, we benchmarked the dual-engine gateway against standalone, state-of-the-art safety models: **PromptGuard2** (a specialized, fast classification model) and **OSS 120B Safeguard** (a massive, deep-reasoning safety LLM). 
+
+The results highlight the critical trade-offs between raw inference speed, hardware requirements, and enterprise compliance capabilities.
+
+| Security Engine | Architecture Type | Avg Latency | Hardware Target | Policy Awareness | PII Redaction |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Sentinel Gateway** | Deterministic + Vector RAG | `17ms (L1)` / `2.6s (L2)` | CPU / 4GB RAM | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
+| **PromptGuard2** | ML Classification | `~250 ms` | Single GPU | No *(Categorical output)* | No *(Detection only)* |
+| **OSS Safeguard 120B** | Massive Reasoning LLM | `~8.5+ s` | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
+![benchmark](./app/ui/assets/benchmark.gif)
+
+### Architectural Takeaways
+
+*   **The Classifier Trap (PromptGuard2):** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
+*   **The Hardware Trap (OSS 120B Safeguard):** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency (~8.5 seconds) and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
+*   **The Sentinel Advantage:** By splitting the workload, Sentinel achieves the best of both worlds. The **Layer 1 deterministic engine** neutralizes obvious threats and PII in *17 milliseconds* on a standard CPU, entirely bypassing the need for heavy compute. Only ambiguous, context-heavy prompts reach the **Layer 2 RAG engine**, which utilizes a lightweight local vector store to apply enterprise-specific rules without requiring a 120B parameter payload.
+
+## ⚙️ Installation & Quickstart (Docker Recommended)
 
 ### 1. Clone the Repository
 ```bash
@@ -149,7 +175,7 @@ def source .venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
-dpip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables
@@ -177,13 +203,16 @@ docker compose up --build -d
 # Set up Virtual Environment
 python3 -m venv .venv
 source .venv/bin/activate
-
+```
+```bash
 # Install Dependencies
 pip install -r requirements.txt
-
+```
+```bash
 # Terminal 1: Start the FastAPI Gateway Backend
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-
+```
+```bash
 # Terminal 2: Launch the Streamlit SOC Dashboard
 streamlit run app/ui/dashboard.py
 ```
