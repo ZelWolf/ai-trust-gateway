@@ -112,9 +112,7 @@ The dashboard maintains an audit trail of all incoming requests, decisions, and 
 
 
 # 📊 Evaluation Snapshot
-Evaluated on a frozen 150-case security test suite covering benign
-requests, prompt injection, jailbreaks, data extraction, malicious
-code, PII/credentials, and adversarial/obfuscated inputs.
+
 
 ![Test Snapshot](./app/ui/assets/testsnap.png)
 
