@@ -1,19 +1,49 @@
+import os
 import time
 import uuid
 from collections import deque
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, status
+from chromadb import db
+from fastapi import FastAPI, HTTPException, status, Security, Request, Depends
+from fastapi.security import APIKeyHeader
+from sqlalchemy.orm import Session
+from app.database import get_db, AuditLog
 from pydantic import BaseModel, Field
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 from app.security.deterministic import DeterministicEngine
 from app.security.semantic_router import SemanticEngine
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 app = FastAPI(
     title="Sentinel AI Gateway",
     description="Enterprise AI Trust Gateway & Security Reverse Proxy",
     version="1.0.0"
 )
+# Load API keys from environment variable or default to a set of test keys
+RAW_KEYS = os.getenv("SENTINEL_API_KEYS", "sk-sentinel-dev-12345,sk-sentinel-test-98765")
+VALID_API_KEYS = {k.strip() for k in RAW_KEYS.split(",") if k.strip()}
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    """Validates incoming client credentials against authorized registry."""
+    if not api_key or api_key not in VALID_API_KEYS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Missing or invalid X-API-Key header. Access denied by Sentinel Gateway."
+        )
+    return api_key
+
+def get_client_identifier(request: Request) -> str:
+    """Keys rate limits by API Key if present, falling back to client IP to prevent NAT bottlenecks."""
+    return request.headers.get("X-API-Key") or get_remote_address(request)
+
+limiter = Limiter(key_func=get_client_identifier)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Core Engines
 security_engine = DeterministicEngine()
@@ -55,8 +85,23 @@ class ChatResponse(BaseModel):
     security_decision: SecurityDecision
     llm_response: Optional[str] = None
 
+def save_audit_log(db: Session, decision: SecurityDecision):
+    """Persists a pipeline security decision into the SQLite audit log."""
+    db_log = AuditLog(
+        request_id=decision.request_id,
+        decision=decision.decision,
+        risk_level=decision.risk_level,
+        intent=decision.intent,
+        policy_id=decision.policy_id,
+        reason=decision.reason,
+        l1_ms=decision.timing.layer_1_ms,
+        l2_ms=decision.timing.layer_2_ms,
+        total_ms=decision.timing.total_ms
+    )
+    db.add(db_log)
+    db.commit()
 
-async def run_pipeline(prompt: str) -> SecurityDecision:
+async def run_pipeline(prompt: str, db: Session) -> SecurityDecision:
     """Executes the Tiered Defense pipeline and constructs the SecurityDecision object."""
     req_id = f"req_{uuid.uuid4().hex[:8]}"
     start_total = time.perf_counter()
@@ -93,7 +138,21 @@ async def run_pipeline(prompt: str) -> SecurityDecision:
                 total_ms=round(total_ms, 2)
             )
         )
-        TELEMETRY_LOGS.append(decision.model_dump())
+        save_audit_log(db, decision)
+        return decision
+        db_log = AuditLog(
+        request_id=decision.request_id,
+        decision=decision.decision,
+        risk_level=decision.risk_level,
+        intent=decision.intent,
+        policy_id=decision.policy_id,
+        reason=decision.reason,
+        l1_ms=decision.timing.layer_1_ms,
+        l2_ms=decision.timing.layer_2_ms,
+        total_ms=decision.timing.total_ms
+    )
+        db.add(db_log)
+        db.commit()
         return decision
 
     # --- LAYER 2: Semantic Router & Policy RAG ---
@@ -154,25 +213,38 @@ async def run_pipeline(prompt: str) -> SecurityDecision:
             total_ms=round(total_ms, 2)
         )
     )
-    TELEMETRY_LOGS.append(decision.model_dump())
+    save_audit_log(db, decision)
+    return decision
     return decision
 
 
 # ---------------------------------------------------------
-# API ROUTES
+# SECURE API ROUTES
 # ---------------------------------------------------------
 @app.post("/v1/inspect", response_model=SecurityDecision)
-async def inspect_endpoint(payload: ChatRequest):
+@limiter.limit("10/minute") # Rate limit
+async def inspect_endpoint(
+    request: Request, 
+    payload: ChatRequest,
+    api_key: str = Security(verify_api_key), # Authentication
+    db: Session = Depends(get_db) 
+):
     """Auditing endpoint: Evaluates prompt safety without invoking downstream LLMs."""
-    return await run_pipeline(payload.prompt)
+    return await run_pipeline(payload.prompt,db)
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
-async def chat_proxy_endpoint(payload: ChatRequest):
+@limiter.limit("5/minute") # Strict 5 requests per minute limit
+async def chat_proxy_endpoint(
+    request: Request, 
+    payload: ChatRequest,
+    api_key: str = Security(verify_api_key), # Authentication
+    db: Session = Depends(get_db) 
+):
     """Full Reverse Proxy: Inspects prompt, applies redaction/blocks, and proxies to LLM."""
-    decision = await run_pipeline(payload.prompt)
+    decision = await run_pipeline(payload.prompt,db)
 
-    # If blocked, drop the connection immediately
+    # If blocked, return a security block response WITHOUT dropping the connection
     if decision.decision == "BLOCK":
         return ChatResponse(
             request_id=decision.request_id,
@@ -197,11 +269,33 @@ async def chat_proxy_endpoint(payload: ChatRequest):
 
 
 @app.get("/v1/telemetry", response_model=List[Dict[str, Any]])
-async def get_telemetry():
-    """Returns the historical buffer of recent requests to populate the Streamlit SOC UI."""
-    return list(TELEMETRY_LOGS)
-
+async def get_telemetry(
+    api_key: str = Security(verify_api_key),  
+    db: Session = Depends(get_db)
+): 
+    """Fetches the last 100 audit records directly from the SQLite database."""
+    # Query the database, ordered by newest first
+    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
+    
+    #  Reconstruct the JSON shape that the Streamlit dashboard expects
+    return [
+        {
+            "request_id": log.request_id,
+            "timestamp": log.timestamp.isoformat(),
+            "decision": log.decision,
+            "risk_level": log.risk_level,
+            "intent": log.intent,
+            "policy_id": log.policy_id,
+            "reason": log.reason,
+            "timing": {
+                "layer_1_ms": log.l1_ms,
+                "layer_2_ms": log.l2_ms,
+                "total_ms": log.total_ms
+            }
+        }
+        for log in logs
+    ]
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Ultra-low latency probe for liveness checks."""
+    """Ultra-low latency probe for liveness checks. (Publicly accessible)"""
     return {"status": "healthy", "service": "sentinel-gateway"}
