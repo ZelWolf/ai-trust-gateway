@@ -32,9 +32,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-GATEWAY_BASE_URL = "http://localhost:8000"
+GATEWAY_BASE_URL = "http://gateway-api:8000"
 API_BASE_URL = f"{GATEWAY_BASE_URL}/v1"
-GATEWAY_BASE_URL = "http://localhost:8000"
+GATEWAY_BASE_URL = "http://gateway-api:8000"
 API_BASE_URL = f"{GATEWAY_BASE_URL}/v1"
 
 #  Define Auth Headers for Protected Endpoints 
@@ -45,7 +45,15 @@ AUTH_HEADERS = {
 }
 # --- SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.image("assets/banner.png", use_container_width=True)
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    banner_path = os.path.join(current_dir, "assets", "banner.png")
+    
+    if os.path.exists(banner_path):
+        st.image(banner_path, use_container_width=True)
+    else:
+        st.markdown("### 🛡️ Sentinel Gateway")
+        
     st.caption("Enterprise Security Reverse Proxy")
     st.divider()
     
