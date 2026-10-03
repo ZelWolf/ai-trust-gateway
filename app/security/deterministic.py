@@ -1,11 +1,22 @@
 import asyncio
 from typing import Dict, Any, List, Tuple
 from presidio_analyzer import AnalyzerEngine, PatternRecognizer, Pattern
+from presidio_analyzer.nlp_engine import NlpEngineProvider 
 
 class DeterministicEngine:
     def __init__(self):
-        self.analyzer = AnalyzerEngine()
+        configuration = {
+            "nlp_engine_name": "spacy",
+            "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
+        }
         
+        # NLP enginer
+        provider = NlpEngineProvider(nlp_configuration=configuration)
+        custom_nlp_engine = provider.create_engine()
+        self.analyzer = AnalyzerEngine(
+            nlp_engine=custom_nlp_engine, 
+            supported_languages=["en"]
+        )
         # Custom regex patterns for credentials and specific PII
         self.custom_patterns = {
             # Secrets & Tokens
