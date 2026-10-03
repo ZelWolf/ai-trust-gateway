@@ -3,6 +3,7 @@ fastapi==0.111.0
 uvicorn==0.30.1
 pydantic==2.7.4
 python-dotenv==1.0.1
+slowapi==0.1.10
 
 # Layer 1: Deterministic Security (Presidio)
 presidio-analyzer==2.2.354
@@ -14,6 +15,7 @@ langchain-community==0.2.6
 langgraph==0.1.4
 chromadb==0.5.3
 langchain-chroma==0.1.2
+sqlachemy==2.0.52
 
 # LLM Providers (==> Groq, HuggingFace)
 langchain-groq==0.1.9
