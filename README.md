@@ -66,7 +66,7 @@ and evaluates each request through two security layers:
     *   **Layer 2 / Policy Engine** identifies the malicious intent to create network exploit scripts, triggering a **HARD BLOCK** under compliance policy POL-MAL-003.
         
 *   **Result:** The request is dropped instantly at the proxy layer. **Zero downstream API calls are made**, and zero compute tokens are wasted on malicious traffic, ensuring complete corporate security with full SOC audit trails.
-## 🏗️ System Architecture
+# 🏗️ System Architecture
 
 Sentinel operates as an asynchronous reverse proxy, enforcing strict zero-trust boundaries between clients and foundation models without introducing unacceptable latency penalties.
 
@@ -115,12 +115,13 @@ Client Request
 - **Interactive SOC Observability Dashboard:** Built with Streamlit to monitor live traffic, track decision latencies, inspect pipeline blocks, and export structured JSON audit records.
 - **Security Benchmark Arena:** A built-in parallel evaluation suite comparing Sentinel's custom pipeline against specialized industry safety models (such as Meta Llama Prompt Guard and OpenAI Safety Guard) in real-time.
 
-## ## 📊 Evaluation Snapshot
-
-
+# 📊 Evaluation Snapshot
 Evaluated on a frozen 150-case security test suite covering benign
 requests, prompt injection, jailbreaks, data extraction, malicious
 code, PII/credentials, and adversarial/obfuscated inputs.
+
+![Test Snapshot](./app/ui/assets/testsnap.png)
+
 
 | Metric | Result |
 |---|---:|
