@@ -140,21 +140,26 @@ Evaluated on a frozen **150-case adversarial test suite** covering prompt inject
 - **Semantic Guardrails (Layer 2):** LangChain Core, LangGraph, ChromaDB, FastEmbed
 - **Inference & Benchmarking:** Groq API SDK (`langchain-groq`), HTTPX
 
-##Additional: ⚔️ Benchmark Arena: Sentinel vs. Industry Safeguards
+## Additional: ⚔️ Benchmark Arena: Sentinel vs. Industry Safeguards
 
 To validate Sentinel's architectural approach, we benchmarked the dual-engine gateway against standalone, state-of-the-art safety models: **PromptGuard2** (a specialized, fast classification model) and **OSS 120B Safeguard** (a massive, deep-reasoning safety LLM). 
 
 The results highlight the critical trade-offs between raw inference speed, hardware requirements, and enterprise compliance capabilities.
 
-| Security Engine | Architecture Type | Avg Latency | Hardware Target | Policy Awareness | PII Redaction |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Sentinel Gateway** | Deterministic + Vector RAG | `17ms (L1)` / `2.6s (L2)` | CPU / 4GB RAM | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
-| **PromptGuard2** | ML Classification | `~250 ms` | Single GPU | No *(Categorical output)* | No *(Detection only)* |
-| **OSS Safeguard 120B** | Massive Reasoning LLM | `~8.5+ s` | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
+| Security Engine | Architecture Type | Hardware Target | Policy Awareness | PII Redaction |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sentinel Gateway** | Deterministic + Vector RAG | CPU / 4GB RAM | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
+| **PromptGuard2** | ML Classification | Single GPU | No *(Categorical output)* | No *(Detection only)* |
+| **OSS Safeguard 120B** | Massive Reasoning LLM | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
 
 
 ![benchmark](./app/ui/assets/comparisons.gif)
 
+For queries with PII
+
+![benchmark](./app/ui/assets/comparisonattack.gif)
+
+For LLM attack queries
 ### Architectural Takeaways
 
 *   **The Classifier Trap (PromptGuard2):** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
