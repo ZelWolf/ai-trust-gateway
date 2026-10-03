@@ -86,6 +86,21 @@ This reduces unnecessary inference, downstream API calls, and security analysis 
 Sentinel operates as an asynchronous LLM security gateway, enforcing zero-trust inspection boundaries between client applications and downstream model providers.
 
 ![Architecture](./app/ui/assets/architecture.png)
+
+## 🧠 Layer 2: Semantic Guardrails & Policy RAG
+
+While Layer 1 handles exact pattern matching and PII redaction, Layer 2 is engineered to neutralize zero-day prompt injections, adversarial jailbreaks, and nuanced compliance violations. It operates as an asynchronous state machine powered by **LangGraph**, utilizing an **LLM-as-a-Judge** architecture for final payload validation.
+
+### The Evaluation Workflow
+1. **Intent Classification:** Upon passing Layer 1, the sanitized prompt is evaluated to determine its underlying intent (e.g., *Data Extraction, Code Generation, Administrative Bypass*).
+2. **Policy RAG (ChromaDB + FastEmbed):** Based on the classified intent, the gateway queries a localized ChromaDB vector store using lightweight `FastEmbed` models. It retrieves the exact corporate security policies relevant to the user's request (e.g., "POL-MAL-003: Prohibit network exploit generation").
+3. **LLM-as-a-Judge (Groq API):** The original prompt and the retrieved policies are compiled into a strict evaluation template. A high-speed reasoning model (accessed via Groq) acts as an impartial judge. It does not generate a conversational response for the user; instead, it evaluates the prompt against the retrieved policy and outputs a strict binary decision (`PASS` or `BLOCK`) alongside a cited reasoning chain.
+4. **Zero-Token Short-Circuiting:** If the Judge returns a `BLOCK`, the gateway instantly terminates the connection and logs the violation to the SQLite audit database. This guarantees that malicious or non-compliant prompts never consume expensive compute tokens on the downstream application LLM.
+![layer2](./app/ui/assets/layer2.png)
+
+### Policy RAG workflow
+![rag](./app/ui/assets/rag.png)
+
 # 🚀 Key Features
 
 - **Dual-Tiered Defense Pipeline:** Combines lightning-fast deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
