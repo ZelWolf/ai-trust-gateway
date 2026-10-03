@@ -163,8 +163,8 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 ### Architectural Takeaways
 
 *   **The Classifier Trap (PromptGuard2):** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
-*   **The Hardware Trap (OSS 120B Safeguard):** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency (~8.5 seconds) and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
-*   **The Sentinel Advantage:** By splitting the workload, Sentinel achieves the best of both worlds. The **Layer 1 deterministic engine** neutralizes obvious threats and PII in *17 milliseconds* on a standard CPU, entirely bypassing the need for heavy compute. Only ambiguous, context-heavy prompts reach the **Layer 2 RAG engine**, which utilizes a lightweight local vector store to apply enterprise-specific rules without requiring a 120B parameter payload.
+*   **The Hardware Trap (OSS 120B Safeguard):** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
+*   **The Sentinel Advantage:** By splitting the workload, Sentinel achieves the best of both worlds. The **Layer 1 deterministic engine** neutralizes obvious threats and PII on a standard CPU, entirely bypassing the need for heavy compute. Only ambiguous, context-heavy prompts reach the **Layer 2 RAG engine**, which utilizes a lightweight local vector store to apply enterprise-specific rules without requiring a 120B parameter payload.
 
 ## ⚙️ Installation & Quickstart (Docker Recommended)
 
