@@ -155,11 +155,11 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 
 ![benchmark](./app/ui/assets/comparisons.gif)
 
-For queries with PII
+#### For queries with PII
 
 ![benchmark](./app/ui/assets/comparisonattack.gif)
 
-For LLM attack queries
+#### For LLM attack queries
 ### Architectural Takeaways
 
 *   **The Classifier Trap (PromptGuard2):** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
