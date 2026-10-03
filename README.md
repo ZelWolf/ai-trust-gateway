@@ -1,6 +1,6 @@
 <div align="center">
     
-![Project Banner](./banner.png)
+![Project Banner](./app/ui/assets//banner.png)
 
 ### Policy-Aware Security Gateway for LLM Applications
 
