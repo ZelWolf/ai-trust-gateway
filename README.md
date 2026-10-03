@@ -170,8 +170,8 @@ POLICY_SCORE_THRESHOLD=0.16
 docker compose up --build -d
 ``` 
 #### Access the Services 
-**SOC Dashboard: http://localhost:8501
-**API Health Probe: http://localhost:8000/health
+- SOC Dashboard: http://localhost:8501
+- API Health Probe: http://localhost:8000/health
 
 
 ## Alternative: Local Development (Bare Metal)
