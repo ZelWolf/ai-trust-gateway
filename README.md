@@ -17,7 +17,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.63.0-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success)]()
+[![Status: Production Grade Prototype](https://img.shields.io/badge/Status-Production%20Ready-success)]()
 
 *A high-performance, dual-layer security middleware designed to intercept, inspect, redact, and evaluate LLM payloads in real-time before they reach downstream generative models.*
 
@@ -67,10 +67,10 @@ and evaluates each request through two security layers:
         
     *   **Layer 2 / Policy Engine** identifies the malicious intent to create network exploit scripts, triggering a **HARD BLOCK** under compliance policy POL-MAL-003.
         
-*   **Result:** The request is dropped instantly at the proxy layer. **Zero downstream API calls are made**, and zero compute tokens are wasted on malicious traffic, ensuring complete corporate security with full SOC audit trails.
+*   **Result:** The request is dropped instantly at the proxy layer. **The request is terminated at the gateway, preventing a downstream LLM invocation.**, and zero compute tokens are wasted on malicious traffic, providing centralized enforcement and auditable security controls for downstream LLM traffic. with full SOC audit trails.
 # 🏗️ System Architecture
 
-Sentinel operates as an asynchronous reverse proxy, enforcing strict zero-trust boundaries between clients and foundation models without introducing unacceptable latency penalties.
+Sentinel operates as an asynchronous LLM security gateway, enforcing zero-trust inspection boundaries between client applications and downstream model providers.
 
 ![Architecture](./app/ui/assets/architecture.png)
 # 🚀 Key Features
@@ -90,11 +90,11 @@ Sentinel includes a real-time observability suite designed to monitor gateway he
 ### Key Metrics Tracked
 The dashboard maintains an audit trail of all incoming requests, decisions, and system latency. Key insights include:
 
-*   **LLM Calls Avoided:** Quantifies direct cost savings by tracking the number of malicious or non-compliant prompts hard-stopped at the proxy before consuming expensive downstream LLM tokens[cite: 4].
-*   **L1 Early-Exit %:** The percentage of total traffic blocked and terminated instantly by the deterministic Layer 1 engine[cite: 4]. A high early-exit rate indicates the gateway is highly efficient, neutralizing obvious threats (like regex matches or exact PII) via fast CPU-bound checks before invoking the heavier Layer 2 semantic engine.
-*   **P50 Latency (Median Baseline):** The median processing time (currently tracking around ~1172 ms)[cite: 4]. This means 50% of all payloads are inspected and routed faster than this threshold, representing the typical system performance under normal load.
-*   **P95 Latency (Tail Latency):** The 95th percentile processing time (currently tracking around ~5330 ms)[cite: 4]. This indicates that 95% of requests are processed faster than this value, while the slowest 5% take longer. Tracking P95 is critical for identifying edge-case bottlenecks, massive text payloads, or worst-case degradation.
-*   **Traffic Analytics:** Visualizes the Gateway Action Distribution, providing an instant breakdown of allowed, redacted, and blocked payloads[cite: 4].
+*   **LLM Calls Avoided:** Quantifies direct cost savings by tracking the number of malicious or non-compliant prompts hard-stopped at the proxy before consuming expensive downstream LLM tokens
+*   **L1 Early-Exit %:** The percentage of total traffic blocked and terminated instantly by the deterministic Layer 1 engine A high early-exit rate indicates the gateway is highly efficient, neutralizing obvious threats (like regex matches or exact PII) via fast CPU-bound checks before invoking the heavier Layer 2 semantic engine.
+*   **P50 Latency (Median Baseline):** The median processing time . This means 50% of all payloads are inspected and routed faster than this threshold, representing the typical system performance under normal load.
+*   **P95 Latency (Tail Latency):** The 95th percentile processing time . This indicates that 95% of requests are processed faster than this value, while the slowest 5% take longer. Tracking P95 is critical for identifying edge-case bottlenecks, massive text payloads, or worst-case degradation.
+*   **Traffic Analytics:** Visualizes the Gateway Action Distribution, providing an instant breakdown of allowed, redacted, and blocked payloads.
 
 
 
