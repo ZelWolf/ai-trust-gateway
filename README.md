@@ -80,21 +80,23 @@ Sentinel operates as an asynchronous reverse proxy, enforcing strict zero-trust 
 - **Intelligent PII Redacting & Masking:** Automatically strips or replaces sensitive personal identifiers, credentials, and custom enterprise secrets before forwarding sanitized prompts.
 - **Interactive SOC Observability Dashboard:** Built with Streamlit to monitor live traffic, track decision latencies, inspect pipeline blocks, and export structured JSON audit records.
 - **Security Benchmark Arena:** A built-in parallel evaluation suite comparing Sentinel's custom pipeline against specialized industry safety models (such as Meta Llama Prompt Guard and OpenAI Safety Guard) in real-time.
-
+### Architectural Implementation
+To ensure high throughput, the FastAPI backend logs all routing decisions and threat detections **asynchronously** into a local SQLite database housed in a persistent Docker volume. The Streamlit UI container acts as an air-gapped reader, pulling from this volume to generate metrics. This guarantees that heavy dashboard rendering never locks the main API thread or slows down active user requests.
 ## 📈 Telemetry & Observability
 
 Sentinel includes a real-time observability suite designed to monitor gateway health, audit traffic, and quantify direct cost savings—all without adding blocking overhead to the core API.
 ![Telemetry](./app/ui/assets/telemetry.gif)
 
 ### Key Metrics Tracked
-The dashboard maintains an audit trail of all incoming requests, decisions, and system latency[cite: 4]. Key insights include:
+The dashboard maintains an audit trail of all incoming requests, decisions, and system latency. Key insights include:
+
 *   **LLM Calls Avoided:** Quantifies direct cost savings by tracking the number of malicious or non-compliant prompts hard-stopped at the proxy before consuming expensive downstream LLM tokens[cite: 4].
-*   **L1 Early-Exit %:** Measures the efficiency of the deterministic Layer 1 engine by showing the percentage of traffic instantly blocked via CPU-bound checks[cite: 4].
-*   **System Latency (P50 & P95):** Monitors processing overhead in real-time (e.g., tracking median P50 latencies around 1100ms) to ensure strict SLAs are maintained[cite: 4].
+*   **L1 Early-Exit %:** The percentage of total traffic blocked and terminated instantly by the deterministic Layer 1 engine[cite: 4]. A high early-exit rate indicates the gateway is highly efficient, neutralizing obvious threats (like regex matches or exact PII) via fast CPU-bound checks before invoking the heavier Layer 2 semantic engine.
+*   **P50 Latency (Median Baseline):** The median processing time (currently tracking around ~1172 ms)[cite: 4]. This means 50% of all payloads are inspected and routed faster than this threshold, representing the typical system performance under normal load.
+*   **P95 Latency (Tail Latency):** The 95th percentile processing time (currently tracking around ~5330 ms)[cite: 4]. This indicates that 95% of requests are processed faster than this value, while the slowest 5% take longer. Tracking P95 is critical for identifying edge-case bottlenecks, massive text payloads, or worst-case degradation.
 *   **Traffic Analytics:** Visualizes the Gateway Action Distribution, providing an instant breakdown of allowed, redacted, and blocked payloads[cite: 4].
 
-### Architectural Implementation
-To ensure high throughput, the FastAPI backend logs all routing decisions and threat detections **asynchronously** into a local SQLite database housed in a persistent Docker volume. The Streamlit UI container acts as an air-gapped reader, pulling from this volume to generate metrics. This guarantees that heavy dashboard rendering never locks the main API thread or slows down active user requests.
+
 
 # 📊 Evaluation Snapshot
 Evaluated on a frozen 150-case security test suite covering benign
