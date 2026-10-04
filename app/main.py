@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 import uuid
 from collections import deque
 from typing import List, Dict, Any, Optional
@@ -61,9 +62,8 @@ downstream_llm = ChatGroq(
 # In-Memory Telemetry Ring Buffer (Holds last 100 requests for the SOC Dashboard)
 TELEMETRY_LOGS = deque(maxlen=100)
 
-# ---------------------------------------------------------
+
 # UNIFIED SCHEMAS
-# ---------------------------------------------------------
 class ChatRequest(BaseModel):
     prompt: str = Field(..., example="Explain how neural networks work.")
 
@@ -141,24 +141,10 @@ async def run_pipeline(prompt: str, db: Session) -> SecurityDecision:
                 total_ms=round(total_ms, 2)
             )
         )
-        save_audit_log(db, decision)
+        await asyncio.to_thread(save_audit_log, db, decision)
         return decision
-        db_log = AuditLog(
-        request_id=decision.request_id,
-        decision=decision.decision,
-        risk_level=decision.risk_level,
-        intent=decision.intent,
-        policy_id=decision.policy_id,
-        reason=decision.reason,
-        l1_ms=decision.timing.layer_1_ms,
-        l2_ms=decision.timing.layer_2_ms,
-        total_ms=decision.timing.total_ms
-    )
-        db.add(db_log)
-        db.commit()
-        return decision
-
-    # --- LAYER 2: Semantic Router & Policy RAG ---
+      
+    # Layer 2: Semantic Router & Policy RAG 
     # Standard PII proceeds with the sanitized prompt for contextual analysis
     l2_start = time.perf_counter()
     l2_result = await semantic_engine.evaluate(sanitized)
@@ -174,7 +160,7 @@ async def run_pipeline(prompt: str, db: Session) -> SecurityDecision:
         start_idx = reasoning.find("POL-")
         policy_id = reasoning[start_idx:start_idx + 11].split()[0].strip(".,:;\"'")
 
-    # --- ARCHITECTURAL SAFETY FLOOR ---
+    #  ARCHITECTURAL SAFETY FLOOR
     # Overrule the Judge if the Classifier caught a hard prompt injection keyword
     if intent == "PROMPT_INJECTION" and any(
         keyword in sanitized.lower() 
@@ -216,14 +202,12 @@ async def run_pipeline(prompt: str, db: Session) -> SecurityDecision:
             total_ms=round(total_ms, 2)
         )
     )
-    save_audit_log(db, decision)
-    return decision
+    await asyncio.to_thread(save_audit_log, db, decision)
     return decision
 
 
-# ---------------------------------------------------------
 # SECURE API ROUTES
-# ---------------------------------------------------------
+
 @app.post("/v1/inspect", response_model=SecurityDecision)
 @limiter.limit("10/minute") # Rate limit
 async def inspect_endpoint(
@@ -272,7 +256,7 @@ async def chat_proxy_endpoint(
 
 
 @app.get("/v1/telemetry", response_model=List[Dict[str, Any]])
-async def get_telemetry(
+def get_telemetry(
     api_key: str = Security(verify_api_key),  
     db: Session = Depends(get_db)
 ): 
