@@ -19,7 +19,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-*A high-performance, dual-layer security middleware designed to intercept, inspect, redact, and evaluate LLM payloads in real-time before they reach downstream generative models.*
+*A dual-layer security middleware designed to intercept, inspect, redact, and evaluate LLM payloads in real-time before they reach downstream generative models.*
 
 </div>
 
@@ -104,8 +104,8 @@ While Layer 1 handles exact pattern matching and PII redaction, Layer 2 is engin
 
 # 🚀 Key Features
 
-- **Dual-Tiered Defense Pipeline:** Combines lightning-fast deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
-- **Zero-Token Short-Circuiting:** Malicious prompts, credential leaks, and prompt injections are hard-stopped at the proxy level, preventing wasted compute tokens and API costs on downstream LLMs.
+- **Dual-Tiered Defense Pipeline:** Combines deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
+- **Zero Downstream-LLM Tokens:** Malicious prompts, credential leaks, and prompt injections are hard-stopped at the proxy level, preventing wasted compute tokens and API costs on downstream LLMs.
 - **Intelligent PII Redacting & Masking:** Automatically strips or replaces sensitive personal identifiers, credentials, and custom enterprise secrets before forwarding sanitized prompts.
 - **Interactive SOC Observability Dashboard:** Built with Streamlit to monitor live traffic, track decision latencies, inspect pipeline blocks, and export structured JSON audit records.
 - **Security Benchmark Arena:** A built-in parallel evaluation suite comparing Sentinel's custom pipeline against specialized industry safety models (such as Meta Llama Prompt Guard and OpenAI Safety Guard) in real-time.
@@ -221,11 +221,11 @@ To validate Sentinel's architectural approach, we benchmarked the dual-engine ga
 
 The results highlight the critical trade-offs between raw inference speed, hardware requirements, and enterprise compliance capabilities.
 
-| Security Engine | Architecture Type | Deployment Footprint | Policy Awareness | PII Redaction |
+| Security Engine | Architecture Type | Execution Strategy | Policy Awareness | PII Mitigation |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sentinel Gateway** | Deterministic + Vector RAG | **Local CPU (<4GB) + Groq API** | Yes *(Cites specific policies)* | Yes *(In-place masking)* |
-| **PromptGuard2** | ML Classification | Single GPU | No *(Categorical output)* | No *(Detection only)* |
-| **OSS Safeguard 120B** | Massive Reasoning LLM | Multi-GPU Cluster | Yes *(Zero-shot reasoning)* | No *(Detection only)* |
+| **Sentinel Gateway** | Deterministic + Vector RAG | **Cascaded** (Local CPU early-exit + selective API) | Yes *(Dynamic via Vector RAG)* | Yes *(In-place deterministic masking)* |
+| **PromptGuard2** | ML Classification | **100% Local** (Requires dedicated GPU) | No *(Static categorical output)* | No *(Detection only, no masking)* |
+| **OSS Safeguard 20B** | Reasoning LLM | **100% Remote** (API call on every request) | No *(Base model lacks internal corporate rules)* | No *(Detection only, no masking)* |
 
 
 ![benchmark](./app/ui/assets/comparisons.gif)
@@ -237,10 +237,9 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 #### For LLM attack queries
 ### Architectural Takeaways
 
-*   **PromptGuard2:** While purpose-built classifiers are incredibly fast, they suffer from structural blindness. They cannot evaluate prompts against specific internal corporate policies, and they cannot actively redact PII, rendering them incomplete for compliance-heavy environments.
-*   **OSS 120B Safeguard:** Massive reasoning models offer incredible contextual safety, but deploying a 120B parameter model as a real-time proxy layer introduces fatal latency and requires exorbitant GPU compute clusters, defeating the purpose of an efficient gateway.
-*   **Sentinel AI Gateway:** By splitting the workload, Sentinel achieves the best of both worlds. The **Layer 1 deterministic engine** neutralizes obvious threats and PII on a standard CPU, entirely bypassing the need for heavy compute. Only ambiguous, context-heavy prompts reach the **Layer 2 RAG engine**, which utilizes a lightweight local vector store to apply enterprise-specific rules without requiring a 120B parameter payload.
-  ## 🔌 API Reference
+* **PromptGuard2 (Standalone):** While purpose-built classifiers are incredibly fast and can run locally, they suffer from structural blindness. They cannot evaluate prompts against dynamic internal corporate policies, and they cannot actively redact PII. They are excellent filters, but incomplete as standalone enterprise gateways.
+* **Naive OSS Safeguard 20B:** Massive reasoning models offer incredible contextual safety. However, routing 100% of proxy traffic to an external 20B model API introduces high baseline latency and massive token costs. Furthermore, in a zero-shot environment, the model does not know the company's specific acceptable-use policies.
+* **The Sentinel Approach (Orchestration):** Sentinel does not replace the 20B model; it optimizes its usage. By utilizing a local deterministic CPU engine (Layer 1), Sentinel neutralizes obvious threats and redacts PII instantly, saving remote API token costs. Only ambiguous, context-heavy prompts are forwarded to the 20B model (Layer 2), alongside specific RAG-injected corporate policies, ensuring the LLM acts as an informed judge rather than a blind filter.
 
 Sentinel exposes a REST API for inspecting and securing LLM requests.
 
@@ -291,8 +290,8 @@ cd ai-trust-gateway
 
 ### 2. Set Up Virtual Environment
 ```bash
-def python3 -m venv .venv
-def source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### 3. Install Dependencies
