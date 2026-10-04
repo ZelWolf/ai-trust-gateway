@@ -83,13 +83,26 @@ Only requests requiring semantic analysis reach Layer 2.
 This reduces unnecessary inference, downstream API calls, and security analysis cost while preserving a deeper inspection path for ambiguous requests.
 # 🏗️ System Architecture
 
-Sentinel operates as an asynchronous LLM security gateway, enforcing zero-trust inspection boundaries between client applications and downstream model providers.
+Sentinel operates as a dual-layer reverse proxy utilizing FastAPI. Incoming prompts pass through Layer 1 for deterministic scanning and Layer 2 for semantic analysis before hitting the final decision logic[cite: 1]. The entire stack, including the API, ChromaDB vector store, SQLite audit log, and a Streamlit SOC dashboard, is deployed via Docker Compose
 
 ![Architecture](./app/ui/assets/architecture.png)
 
-## 🧠 Layer 2: Semantic Guardrails & Policy RAG
+# ⌛ Request Lifecycle
 
-While Layer 1 handles exact pattern matching and PII redaction, Layer 2 is engineered to neutralize zero-day prompt injections, adversarial jailbreaks, and nuanced compliance violations. It operates as an asynchronous state machine powered by **LangGraph**, utilizing an **LLM-as-a-Judge** architecture for final payload validation.
+This flow illustrates the system's early-exit architecture designed to minimize API latency. Requests are first evaluated for valid API keys and rate limits. The pipeline can terminate early by returning a BLOCK decision at Layer 1 (for hard credentials) or Layer 2 (for policy violations), ensuring that only safe ALLOW or REDACT decisions are ever forwarded to the downstream LLM.
+
+![lifecycle](./app/ui/assets/lifecycle.png)
+
+
+## 📜 Layer 1: Deterministic Engine
+
+Layer 1 utilizes Presidio, spaCy, and custom regex recognizers for high-speed deterministic scanning. It enforces a critical hard block on infrastructure secrets (like AWS or OpenAI keys), while actively redacting standard PII (such as CREDIT_CARD, US_SSN, PAN, and AADHAAR) and other API tokens so the payload is sanitized before further processing.
+
+![layer1](./app/ui/assets/layer1.png)
+
+## 🧠 Layer 2: Semantic Router
+
+Layer 2 employs a LangGraph workflow to manage context-aware semantic security. A 20B classifier first categorizes the prompt's intent; benign traffic takes a fast path to the end, while threat intents trigger a policy RAG retrieval step and a final evaluation by a 20B safeguard judge.
 
 ### The Evaluation Workflow
 1. **Intent Classification:** Upon passing Layer 1, the sanitized prompt is evaluated to determine its underlying intent (e.g., *Data Extraction, Code Generation, Administrative Bypass*).
@@ -99,8 +112,16 @@ While Layer 1 handles exact pattern matching and PII redaction, Layer 2 is engin
 ![layer2](./app/ui/assets/layer2.png)
 
 ### Policy RAG workflow
-![rag](./app/ui/assets/rag.png)
 
+The policy retrieval system chunks and embeds enterprise markdown files into a ChromaDB vector space using FastEmbed bge-small-en-v1.5[cite: 5]. During an active query, a similarity search retrieves relevant policy chunks based on an empirically calibrated threshold of 0.16, ensuring the LLM judge only evaluates highly contextual rules.
+
+![rag](./app/ui/assets/RAG.png)
+
+##  ⚖️  Decision Matrix
+The final decision matrix maps specific pipeline conditions to actionable routing decisions and risk severities. For example, credential exposure or unsafe judge rulings result in a CRITICAL or HIGH risk BLOCK, whereas successful PII redaction yields a REDACT decision that safely forwards the sanitized prompt downstream.
+
+
+![decision](./app/ui/assets/decisions.png)
 
 # 🚀 Key Features
 
