@@ -221,7 +221,7 @@ False negatives (allowing malicious traffic through) occur when adversaries succ
 1. **L1 Evasion via Obfuscation:** The deterministic layer relies on exact pattern matching. Attackers bypass this by using encoding techniques (Base64, rot13), or *typoglycemia* (scrambling the middle letters of words). Because the raw regex fails to match the scrambled text, the payload slips through L1.
 2. **L2 Vector Dilution:** RAG embeddings average the semantic meaning of the entire prompt. If an attacker buries a 50-token prompt injection deep inside a 2,000-token fictional story, the overall vector embedding gets mathematically diluted. The cosine distance to the security policy falls below the `POLICY_SCORE_THRESHOLD=0.16`, meaning the policy is never retrieved, and the Judge defaults to `PASS`.
 3. **Judge Susceptibility:** The LLM-as-a-Judge is ultimately still a language model. Complex role-playing attacks (e.g., *"Pretend you are a grandmother..."*) can occasionally trick the Groq evaluation model into ignoring its systemic evaluation prompt.
-### 🎯 Retrieval Threshold Calibration
+###  Retrieval Threshold Calibration
 
 Sentinel's policy retrieval threshold is an empirically calibrated configuration rather than an arbitrary constant.
 
@@ -378,7 +378,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 # Terminal 2: Launch the Streamlit SOC Dashboard
 streamlit run app/ui/dashboard.py
 ```
-### 🧪 Reproducing the Benchmark
+###  Reproducing the Benchmark
 
 The evaluation suite and runner are checked directly into the repository for independent validation:
 * **Test Dataset:** [`tests/test_cases.json`](./tests/test_cases.json) *(150 curated benign, injection, and credential exfiltration prompts)*
