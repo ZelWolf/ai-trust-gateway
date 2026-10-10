@@ -24,7 +24,23 @@
 </div>
 
 ---
-# 🔎 About the Project
+
+## Table of Contents
+
+1. [About the Project](#about-the-project)
+2. [System Architecture](#system-architecture)
+3. [Request Lifecycle](#request-lifecycle)
+4. [Key Features](#key-features)
+5. [Decision Matrix](#decision-matrix)
+6. [Evaluation](#evaluation-snapshot)
+7. [API Reference and Endpoints](#api-reference-and-endpoints)
+8. [Installation and Quickstart](#installation-and-quickstart)
+9. [Repository Structure](#repository-structure)
+
+---
+
+---
+# About the Project
 
 Modern applications increasingly route raw user prompts directly to external large language model providers. This direct communication pipeline introduces severe production and security vulnerabilities across enterprise environments:
 
@@ -68,7 +84,7 @@ and evaluates each request through two security layers:
     *   **Layer 2 / Policy Engine** identifies the malicious intent to create network exploit scripts, triggering a **HARD BLOCK** under compliance policy POL-MAL-003.
         
 *   **Result:** The request is dropped instantly at the proxy layer. **The request is terminated at the gateway, preventing a downstream LLM invocation.**, and zero compute tokens are wasted on malicious traffic, providing centralized enforcement and auditable security controls for downstream LLM traffic. with full SOC audit trails.
-  ## 🧠 Why a Dual-Layer Architecture?
+  ##  Why a Dual-Layer Architecture?
 
 Sentinel separates deterministic security controls from semantic reasoning:
 
@@ -81,26 +97,26 @@ Layer 1 handles high-confidence threats without invoking an LLM.
 Only requests requiring semantic analysis reach Layer 2.
 
 This reduces unnecessary inference, downstream API calls, and security analysis cost while preserving a deeper inspection path for ambiguous requests.
-# 🏗️ System Architecture
+#  System Architecture
 
 Sentinel operates as a dual-layer reverse proxy utilizing FastAPI. Incoming prompts pass through Layer 1 for deterministic scanning and Layer 2 for semantic analysis before hitting the final decision logic[cite: 1]. The entire stack, including the API, ChromaDB vector store, SQLite audit log, and a Streamlit SOC dashboard, is deployed via Docker Compose
 
 ![Architecture](./app/ui/assets/architecture.png)
 
-# ⌛ Request Lifecycle
+#  Request Lifecycle
 
 This flow illustrates the system's early-exit architecture designed to minimize API latency. Requests are first evaluated for valid API keys and rate limits. The pipeline can terminate early by returning a BLOCK decision at Layer 1 (for hard credentials) or Layer 2 (for policy violations), ensuring that only safe ALLOW or REDACT decisions are ever forwarded to the downstream LLM.
 
 ![lifecycle](./app/ui/assets/lifecycle.png)
 
 
-## 📜 Layer 1: Deterministic Engine
+##  Layer 1: Deterministic Engine
 
 Layer 1 utilizes Presidio, spaCy, and custom regex recognizers for high-speed deterministic scanning. It enforces a critical hard block on infrastructure secrets (like AWS or OpenAI keys), while actively redacting standard PII (such as CREDIT_CARD, US_SSN, PAN, and AADHAAR) and other API tokens so the payload is sanitized before further processing.
 
 ![layer1](./app/ui/assets/layer1.png)
 
-## 🧠 Layer 2: Semantic Router
+##  Layer 2: Semantic Router
 
 Layer 2 employs a LangGraph workflow to manage context-aware semantic security. A 20B classifier first categorizes the prompt's intent; benign traffic takes a fast path to the end, while threat intents trigger a policy RAG retrieval step and a final evaluation by a 20B safeguard judge.
 
@@ -117,13 +133,13 @@ The policy retrieval system chunks and embeds enterprise markdown files into a C
 
 ![rag](./app/ui/assets/RAG.png)
 
-##  ⚖️  Decision Matrix
+##    Decision Matrix
 The final decision matrix maps specific pipeline conditions to actionable routing decisions and risk severities. For example, credential exposure or unsafe judge rulings result in a CRITICAL or HIGH risk BLOCK, whereas successful PII redaction yields a REDACT decision that safely forwards the sanitized prompt downstream.
 
 
 ![decision](./app/ui/assets/decisions.png)
 
-# 🚀 Key Features
+# Key Features
 
 - **Dual-Tiered Defense Pipeline:** Combines deterministic CPU matching (Layer 1) with context-aware semantic reasoning and vector-based policy retrieval (Layer 2).
 - **Zero Downstream-LLM Tokens:** Malicious prompts, credential leaks, and prompt injections are hard-stopped at the proxy level, preventing wasted compute tokens and API costs on downstream LLMs.
@@ -132,7 +148,7 @@ The final decision matrix maps specific pipeline conditions to actionable routin
 - **Security Benchmark Arena:** A built-in parallel evaluation suite comparing Sentinel's custom pipeline against specialized industry safety models (such as Meta Llama Prompt Guard and OpenAI Safety Guard) in real-time.
 ### Architectural Implementation
 To ensure high throughput, the FastAPI backend logs all routing decisions and threat detections **asynchronously** into a local SQLite database housed in a persistent Docker volume. The Streamlit UI container acts as an air-gapped reader, pulling from this volume to generate metrics. This guarantees that heavy dashboard rendering never locks the main API thread or slows down active user requests.
-## 📈 Telemetry & Observability
+## Telemetry & Observability
 
 Sentinel includes a real-time observability suite designed to monitor gateway health, audit traffic, and quantify direct cost savings—all without adding blocking overhead to the core API.
 ![Telemetry](./app/ui/assets/telemetry.gif)
@@ -148,7 +164,7 @@ The dashboard maintains an audit trail of all incoming requests, decisions, and 
 
 
 
-# 📊 Evaluation Snapshot
+# Evaluation Snapshot
 
 Evaluated on a frozen **150-case adversarial test suite** from  [`tests/test_cases.json`](./tests/test_cases.json) covering prompt injections, multi-turn jailbreaks, credential exfiltration, malicious code, and obfuscated PII payloads.
 
@@ -223,11 +239,11 @@ At the `0.16` calibration point, Sentinel successfully captures adversarial inte
 
 > **Note:** This threshold is tightly coupled to Sentinel's current policy corpus, embedding model, and benchmark distribution. It is designed to be recalibrated as enterprise rulesets scale.
 
-### 🛠️ Future Mitigation Roadmap
+###  Future Mitigation Roadmap
 *   **Dynamic Thresholding:** Implementing adaptive `POLICY_SCORE_THRESHOLD` limits based on the user's historical trust score.
 *   **L1 De-obfuscation:** Adding a fast pre-processing step to decode Base64 and hex strings before passing them to the Presidio engine.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Core Gateway & API:** FastAPI, Pydantic v2, Uvicorn (Async IO), SlowAPI (DDoS/Rate Limiting)
 - **Data & Persistence:** SQLAlchemy (SQLite via Persistent Volume), Python-Dotenv
@@ -236,7 +252,7 @@ At the `0.16` calibration point, Sentinel successfully captures adversarial inte
 - **Semantic Guardrails (Layer 2):** LangChain Core, LangGraph, ChromaDB, FastEmbed
 - **Inference & Benchmarking:** Groq API SDK (`langchain-groq`), HTTPX
 
-## Additional: ⚔️ Benchmark Arena: Sentinel vs. Industry Safeguards
+## Additional:  Benchmark Arena: Sentinel vs. Industry Safeguards
 
 To validate Sentinel's architectural approach, we benchmarked the dual-engine gateway against standalone, state-of-the-art safety models: **PromptGuard2** (a specialized, fast classification model) and **OSS 120B Safeguard** (a massive, deep-reasoning safety LLM). 
 
@@ -261,6 +277,9 @@ The results highlight the critical trade-offs between raw inference speed, hardw
 * **PromptGuard2 (Standalone):** While purpose-built classifiers are incredibly fast and can run locally, they suffer from structural blindness. They cannot evaluate prompts against dynamic internal corporate policies, and they cannot actively redact PII. They are excellent filters, but incomplete as standalone enterprise gateways.
 * **Naive OSS Safeguard 20B:** Massive reasoning models offer incredible contextual safety. However, routing 100% of proxy traffic to an external 20B model API introduces high baseline latency and massive token costs. Furthermore, in a zero-shot environment, the model does not know the company's specific acceptable-use policies.
 * **The Sentinel Approach (Orchestration):** Sentinel does not replace the 20B model; it optimizes its usage. By utilizing a local deterministic CPU engine (Layer 1), Sentinel neutralizes obvious threats and redacts PII instantly, saving remote API token costs. Only ambiguous, context-heavy prompts are forwarded to the 20B model (Layer 2), alongside specific RAG-injected corporate policies, ensuring the LLM acts as an informed judge rather than a blind filter.
+
+
+## API Reference and Endpoints
 
 Sentinel exposes a REST API for inspecting and securing LLM requests.
 
@@ -301,7 +320,8 @@ to the configured downstream LLM.
 
 
 
-## ⚙️ Installation & Quickstart (Docker Recommended)
+## Installation and Quickstart 
+### (Docker Recommended)
 
 ### 1. Clone the Repository
 ```bash
@@ -375,7 +395,7 @@ docker compose up -d
 python tests/test_script.py
 ```
 
-## 📂 Project Structure
+##  Repository Structure
 ```text
 ai-trust-gateway/
 ├── app/
