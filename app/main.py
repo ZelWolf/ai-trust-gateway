@@ -45,6 +45,10 @@ def get_client_identifier(request: Request) -> str:
     """Keys rate limits by API Key if present, falling back to client IP to prevent NAT bottlenecks."""
     return request.headers.get("X-API-Key") or get_remote_address(request)
 
+# Rate limit for /v1/inspect is configurable so large offline evaluations (hundreds of
+# prompts) can run without 429s, e.g. INSPECT_RATE_LIMIT="1000/minute" in .env.
+INSPECT_RATE_LIMIT = os.getenv("INSPECT_RATE_LIMIT", "10/minute")
+
 limiter = Limiter(key_func=get_client_identifier)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -209,7 +213,7 @@ async def run_pipeline(prompt: str, db: Session) -> SecurityDecision:
 # SECURE API ROUTES
 
 @app.post("/v1/inspect", response_model=SecurityDecision)
-@limiter.limit("10/minute") # Rate limit
+@limiter.limit(INSPECT_RATE_LIMIT) # Rate limit (default 10/minute)
 async def inspect_endpoint(
     request: Request, 
     payload: ChatRequest,
