@@ -325,7 +325,7 @@ to the configured downstream LLM.
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/ZelWolf/ai-trust-gateway.git](https://github.com/ZelWolf/ai-trust-gateway.git)
+git clone https://github.com/zelwolf/ai-trust-gateway.git
 cd ai-trust-gateway
 ```
 
@@ -344,8 +344,10 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory and add your API credentials:
 ```plaintext
 GROQ_API_KEY=your_groq_api_key_here
+SENTINEL_API_KEYS=choose-a-secret-key        # comma-separated; clients send it as X-API-Key
 ANONYMIZED_TELEMETRY=False
 POLICY_SCORE_THRESHOLD=0.16
+# INSPECT_RATE_LIMIT=1000/minute             # optional: raise the 10/minute default for offline evals
 ```
 
 ### 5. Deploy the Stack
@@ -391,8 +393,24 @@ To run the full suite against your local instance:
 docker compose up -d
 ```
 ```bash
-# 2. Execute the automated evaluation harness
+# 2. Execute the automated evaluation harness (reads SENTINEL_API_KEY, or the first
+#    SENTINEL_API_KEYS entry from .env; backs off automatically on HTTP 429)
 python tests/test_script.py
+```
+
+#### Optional: evaluate on JailbreakBench (held-out)
+
+[JBB-Behaviors](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors) (100 harmful + 100 benign
+behaviors) is used as a held-out set that the policy threshold was **not** tuned on.
+Sentinel only has policies for prompt injection, data extraction and malicious code, so cases are
+tagged `in_scope` (all benign prompts, plus the `Malware/Hacking` behaviors) or `out_of_scope`
+(harassment, disinformation, fraud, etc.). Results are reported per scope with 95% Wilson intervals;
+`out_of_scope` misses reflect missing policy coverage rather than detection failures.
+
+```bash
+pip install datasets                      # or pass local CSVs via --harmful / --benign
+python tests/load_jbb.py                  # writes tests/jbb_cases.json
+python tests/test_script.py --cases tests/jbb_cases.json --list-misses --out jbb_results.json
 ```
 
 ##  Repository Structure
